@@ -10,10 +10,22 @@ app = Flask(__name__)
 CORS(app)
 
 # Load the scaler and model
-scaler = joblib.load('./models/scaler.pkl')
-scaler_mp3 = joblib.load('./models/scaler_v+ma+sdi_mp3.pkl')
-model = tf.keras.models.load_model('./models/lstm_model_v+ma_ws3.h5')
-model_mp3 = tf.keras.models.load_model('./models/lstm_model_v+ma+sdi_ws3_mp3.h5')
+# scaler = joblib.load('./models/scaler.pkl')
+# scaler_mp3 = joblib.load('./models/scaler_v+ma+sdi_mp3.pkl')
+# model = tf.keras.models.load_model('./models/lstm_model_v+ma_ws3.h5')
+# model_mp3 = tf.keras.models.load_model('./models/lstm_model_v+ma+sdi_ws3_mp3.h5')
+
+model = None
+scaler = None
+
+def load_resources(day):
+    global model, scaler
+    if day == 3:
+        scaler = joblib.load('./models/scaler_v+ma+sdi_mp3.pkl')
+        model = tf.keras.models.load_model('./models/lstm_model_v+ma+sdi_ws3_mp3.h5')
+    else:
+        scaler = joblib.load('./models/scaler.pkl')
+        model = tf.keras.models.load_model('./models/lstm_model_v+ma_ws3.h5')
 
 def generateMovingAverage(data, seq_length):
     movingAverages = []
@@ -69,16 +81,15 @@ def predict():
         'Volume': data['volume']
         }
     df = pd.DataFrame(feature)
+    load_resources(predictionDay)
     if (predictionDay == 3):
         df = generateMovingAverage(df, windowSize)
         df = generateStandardDeviationIndicator(df, 3)
-        data_scaled = scaler_mp3.transform(df[windowSize-1:])
+        data_scaled = scaler.transform(df[windowSize-1:])
         data_scaled = data_scaled.reshape(1, 3, 7)
-        prediction = model_mp3.predict(data_scaled)
+        prediction = model.predict(data_scaled)
         expanded_predictions = expand_predictions_multiple(prediction, df.shape)
-        predictions_inverse = scaler_mp3.inverse_transform(expanded_predictions)[:, :4]
-        print(predictions_inverse)
-        print(expanded_predictions.shape)
+        predictions_inverse = scaler.inverse_transform(expanded_predictions)[:, :4]
         return jsonify({'prediction': predictions_inverse.tolist()})
 
     else:
