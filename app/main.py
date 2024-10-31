@@ -108,5 +108,11 @@ def getAll():
     tes = jsonify({'y': df['Year'].tolist(), 'm': df['Month'].tolist(), 'd': df['Day'].tolist(), 'o': df['Open'].tolist(), 'h': df['High'].tolist(), 'l': df['Low'].tolist(), 'c': df['Close'].tolist()})
     return tes
 
+@app.after_request
+def apply_csp(response):
+    # Define the Content Security Policy
+    response.headers['Content-Security-Policy'] = "default-src 'self' https://amusing-contentment-production-1221.up.railway.app"
+    return response
+
 if __name__ == '__main__':
     app.run(debug=True)
