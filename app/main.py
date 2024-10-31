@@ -110,9 +110,16 @@ def getAll():
 
 @app.after_request
 def apply_csp(response):
-    # Define the Content Security Policy
-    response.headers['Content-Security-Policy'] = "default-src 'self' https://amusing-contentment-production-1221.up.railway.app"
+    # Allow XHR requests to the specified origin
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "connect-src 'self' https://tugasakhirmodel-production.up.railway.app; "
+        "script-src 'self'; "
+        "img-src 'self'; "
+        "style-src 'self'"
+    )
     return response
+
 
 
 if __name__ == '__main__':
