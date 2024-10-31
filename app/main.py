@@ -7,7 +7,7 @@ import pandas as pd
 import math
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:9000"])
+CORS(app)
 
 # Load the scaler and model
 scaler = joblib.load('./models/scaler.pkl')
