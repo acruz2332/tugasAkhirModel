@@ -7,7 +7,8 @@ import pandas as pd
 import math
 
 app = Flask(__name__)
-CORS(app, origins=["https://amusing-contentment-production-1221.up.railway.app"])
+CORS(app, origins=["https://tugasakhir-production.up.railway.app"])
+
 
 # Load the scaler and model
 # scaler = joblib.load('./models/scaler.pkl')
@@ -113,7 +114,7 @@ def getAll():
 def apply_csp(response):
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "connect-src 'self' https://amusing-contentment-production-1221.up.railway.app; "
+        "connect-src 'self' https://tugasakhir-production.up.railway.app; "
         "script-src 'self'; "
         "img-src 'self'; "
         "style-src 'self'"
