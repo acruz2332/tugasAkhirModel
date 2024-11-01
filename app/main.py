@@ -7,7 +7,7 @@ import pandas as pd
 import math
 
 app = Flask(__name__)
-CORS(app, origins=["https://amusing-contentment-production-1221.up.railway.app"])
+CORS(app)
 
 # Load the scaler and model
 # scaler = joblib.load('./models/scaler.pkl')
@@ -106,9 +106,10 @@ def getAll():
     print('tess')
     df = pd.read_csv('./data/BTCPredictionDataForVisualization.csv')
     tes = jsonify({'y': df['Year'].tolist(), 'm': df['Month'].tolist(), 'd': df['Day'].tolist(), 'o': df['Open'].tolist(), 'h': df['High'].tolist(), 'l': df['Low'].tolist(), 'c': df['Close'].tolist()})
+    tes = apply_csp(tes)
     return tes
 
-@app.after_request
+
 def apply_csp(response):
     # Allow XHR requests to the specified origin
     response.headers['Content-Security-Policy'] = (
