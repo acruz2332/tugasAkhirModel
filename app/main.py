@@ -108,9 +108,16 @@ def getAll():
     tes = jsonify({'y': df['Year'].tolist(), 'm': df['Month'].tolist(), 'd': df['Day'].tolist(), 'o': df['Open'].tolist(), 'h': df['High'].tolist(), 'l': df['Low'].tolist(), 'c': df['Close'].tolist()})
     return tes
 
+
 @app.after_request
 def apply_csp(response):
-    response.headers['Content-Security-Policy'] = "default-src *; connect-src *; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src *;"
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "connect-src 'self' https://tugasakhirmodel-production.up.railway.app; "
+        "script-src 'self'; "
+        "style-src 'self'; "
+        "img-src 'self';"
+    )
     return response
 
 
