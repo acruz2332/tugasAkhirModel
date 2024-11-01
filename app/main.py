@@ -110,16 +110,8 @@ def getAll():
 
 @app.after_request
 def apply_csp(response):
-    # Allow XHR requests to the specified origin
-    response.headers['Content-Security-Policy'] = (
-        "default-src 'self'; "
-        "connect-src 'self' https://tugasakhirmodel-production.up.railway.app; "
-        "script-src 'self'; "
-        "img-src 'self'; "
-        "style-src 'self'"
-    )
+    response.headers['Content-Security-Policy'] = "default-src *; connect-src *; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src *;"
     return response
-
 
 
 if __name__ == '__main__':
