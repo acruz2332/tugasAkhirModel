@@ -113,10 +113,10 @@ def getAll():
 def apply_csp(response):
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "connect-src 'self' https://tugasakhirmodel-production.up.railway.app; "
+        "connect-src 'self' https://amusing-contentment-production-1221.up.railway.app; "
         "script-src 'self'; "
-        "style-src 'self'; "
-        "img-src 'self';"
+        "img-src 'self'; "
+        "style-src 'self'"
     )
     return response
 
