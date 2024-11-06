@@ -9,21 +9,14 @@ import math
 app = Flask(__name__)
 CORS(app, origins=["https://tugasakhir-production.up.railway.app"])
 
-
-# Load the scaler and model
-# scaler = joblib.load('./models/scaler.pkl')
-# scaler_mp3 = joblib.load('./models/scaler_v+ma+sdi_mp3.pkl')
-# model = tf.keras.models.load_model('./models/lstm_model_v+ma_ws3.h5')
-# model_mp3 = tf.keras.models.load_model('./models/lstm_model_v+ma+sdi_ws3_mp3.h5')
-
 model = None
 scaler = None
 
 def load_resources(day):
     global model, scaler
     if day == 3:
-        scaler = joblib.load('./models/scaler_v+ma+sdi_mp3.pkl')
-        model = tf.keras.models.load_model('./models/lstm_model_v+ma+sdi_ws3_mp3.h5')
+        scaler = joblib.load('./models/scaler_ma+ewma+rsi_mp3.pkl')
+        model = tf.keras.models.load_model('./models/gru_model_ma+ewma+rsi_ws3_mp3.h5')
     else:
         scaler = joblib.load('./models/scaler.pkl')
         model = tf.keras.models.load_model('./models/lstm_model_v+ma_ws3.h5')
@@ -37,6 +30,47 @@ def generateMovingAverage(data, seq_length):
         seq = data['Close'][i-(seq_length-1):i+1]
         movingAverages.append(round(seq.sum()/3, 6))
     data = data.assign(movingAverage=movingAverages)
+    return data
+
+def generateExponentialMovingAverage(data, seq_length):
+    exponentialMovingAverages = []
+    mul = 2/(seq_length+1)
+    for i in range(len(data)):
+        if (i < seq_length-1):
+            exponentialMovingAverages.append(0)
+            continue
+        if (i == seq_length-1):
+            seq = data['Close'][i-(seq_length-1):i+1]
+            movAverage = round(seq.sum()/3, 6)
+            exponentialMovingAverage = ((data['Close'][i] - movAverage))*mul + movAverage
+            exponentialMovingAverages.append(round(exponentialMovingAverage, 6))
+            continue
+        exponentialMovingAverage = ((data['Close'][i] - exponentialMovingAverages[-1])*mul) + exponentialMovingAverages[-1]
+        exponentialMovingAverages.append(round(exponentialMovingAverage, 6))
+    data = data.assign(exponentialMovingAverage=exponentialMovingAverages)
+    return data
+
+def generateRelativeStrengthIndex(data, seq_length):
+    relativeStrengthIndexs = []
+    for i in range(len(data)):
+        if (i < seq_length-1):
+            relativeStrengthIndexs.append(0)
+            continue
+        slicedData = data['Close'][i-(seq_length-1):i+1].reset_index(drop=True)
+        priceChanges = []
+        for j in range(seq_length-1):
+            priceChanges.append(round(slicedData[j+1]-slicedData[j], 6))
+        positiveGained = [i if i > 0 else 0 for i in priceChanges]
+        negativeGained = [abs(i) if i < 0 else 0 for i in priceChanges]
+        avgPositiveGained = round(sum(positiveGained)/(seq_length-1), 6)
+        avgNegativeGained = round(sum(negativeGained)/(seq_length-1), 6)
+        if avgNegativeGained == 0:
+            relativeStrengthIndex = 100
+        else:
+            relativeStrength = round(avgPositiveGained/avgNegativeGained, 6)
+            relativeStrengthIndex = round(100 - (100/(1 + relativeStrength)), 6)
+        relativeStrengthIndexs.append(relativeStrengthIndex)
+    data = data.assign(relativeStrengthIndex=relativeStrengthIndexs)
     return data
 
 def generateStandardDeviationIndicator(data, seq_length):
@@ -56,7 +90,7 @@ def generateStandardDeviationIndicator(data, seq_length):
 
 def expand_predictions(predictions, original_shape):
     expanded = np.zeros((predictions.shape[0], original_shape[1]))
-    expanded[:, [0, 1, 2, 3]] = predictions  # Place predictions in the correct columns
+    expanded[:, [0, 1, 2, 3]] = predictions
     return expanded
 
 def expand_predictions_multiple(predictions, original_shape):
@@ -84,8 +118,10 @@ def predict():
     df = pd.DataFrame(feature)
     load_resources(predictionDay)
     if (predictionDay == 3):
+        df = df.drop(['Volume'], axis=1)
         df = generateMovingAverage(df, windowSize)
-        df = generateStandardDeviationIndicator(df, 3)
+        df = generateExponentialMovingAverage(df, windowSize)
+        df = generateRelativeStrengthIndex(df, windowSize)
         data_scaled = scaler.transform(df[windowSize-1:])
         data_scaled = data_scaled.reshape(1, 3, 7)
         prediction = model.predict(data_scaled)
